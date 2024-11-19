@@ -1,0 +1,38 @@
+- name: Set Hostname Facts
+  ansible.builtin.set_fact:
+    _vm_name_lower: "{{ vm_name | lower }}"
+    _vm_name_upper: "{{ vm_name | upper }}"
+
+- name: Query ConfigMap
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: ConfigMap
+    name: "sysprep-{{ _vm_name_lower }}"
+    namespace: "{{ vm_namespace }}"
+  register: configmap_results
+
+- name: Verify ConfigMap Does Not Exist
+  ansible.builtin.assert:
+    fail_msg: "ConfigMap with unattend.xml for guest '{{ _vm_name_lower }}' already exists!"
+    success_msg: "ConfigMap with unattend.xml for guest '{{ vm_name }}' is missing, will create."
+    that:
+      - configmap_results.resources | count == 0
+
+- name: Create ConfigMap for unattend.xml
+  kubernetes.core.k8s:
+    resource_definition:
+      apiVersion: v1
+      data:
+        unattend.xml: |-
+          {{ lookup('template', 'templates/unattend.xml.j2') }}
+      kind: ConfigMap
+      metadata:
+        name: "sysprep-{{ _vm_name_lower }}"
+        namespace: "{{ vm_namespace }}"
+    state: present
+
+- name: Create VirtualMachine Resource
+  kubernetes.core.k8s:
+    resource_definition: |
+      {{ lookup('template', 'templates/virtualmachine.yaml.j2') }}
+    state: present

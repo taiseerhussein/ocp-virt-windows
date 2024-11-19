@@ -1,0 +1,14 @@
+---
+vm_admin_password: ChangeMe!
+vm_cpu_cores: 1
+vm_cpu_sockets: 6
+vm_cpu_threads: 1
+vm_dns_domain: lab.uc2.io
+vm_dns_server: 172.16.10.2
+vm_gateway: 172.16.10.254
+vm_interface_name: Ethernet Instance 0
+vm_ip: 172.16.10.250/24
+vm_name: ServerTest01
+vm_namespace: windows-virtual-machines
+vm_network_name: default/vlan-100
+vm_ram: 32Gi

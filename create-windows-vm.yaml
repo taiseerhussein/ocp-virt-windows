@@ -1,0 +1,5 @@
+- name: Create Windows VM on OpenShift
+  become: false
+  hosts: localhost
+  roles:
+    - role: winvm

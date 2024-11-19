@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<unattend xmlns="urn:schemas-microsoft-com:unattend">
+    <settings pass="specialize">
+        <component name="Microsoft-Windows-TCPIP" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <Interfaces>
+            <Interface wcm:action="add">
+            <!-- Name of the Ethernet Interface in the Template (from Network Connections) -->
+            <!-- See examples using the MAC address as well -->
+            <Identifier>{{ vm_interface_name }}</Identifier>
+            <Ipv4Settings>
+                <DhcpEnabled>false</DhcpEnabled>
+                <Metric>10</Metric>
+                <RouterDiscoveryEnabled>false</RouterDiscoveryEnabled>
+            </Ipv4Settings>
+            <UnicastIpAddresses>
+                <IpAddress wcm:action="add" wcm:keyValue="1">{{ vm_ip }}</IpAddress>
+            </UnicastIpAddresses>
+            <Routes>
+                <Route wcm:action="add">
+                <Identifier>1</Identifier>
+                <Metric>10</Metric>
+                <NextHopAddress>{{ vm_gateway }}</NextHopAddress>
+                <Prefix>0.0.0.0/0</Prefix>
+                </Route>
+            </Routes>
+            </Interface>
+        </Interfaces>
+        </component>
+        <component name="Microsoft-Windows-DNS-Client" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <Interfaces>
+                <Interface wcm:action="add">
+                <Identifier>Ethernet Instance 0</Identifier>
+                <DNSServerSearchOrder>
+                    <IpAddress wcm:action="add" wcm:keyValue="1">{{ vm_dns_server }}</IpAddress>
+                </DNSServerSearchOrder>
+                <DisableDynamicUpdate>true</DisableDynamicUpdate>
+                <DNSDomain>{{ vm_dns_domain }}</DNSDomain>
+                <EnableAdapterDomainNameRegistration>true</EnableAdapterDomainNameRegistration>
+                </Interface>
+            </Interfaces>
+            <DNSSuffixSearchOrder>
+                <DomainName wcm:action="add" wcm:keyValue="1">{{ vm_dns_domain }}</DomainName>
+            </DNSSuffixSearchOrder>
+        </component>
+        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <ComputerName>{{ _vm_name_upper }}</ComputerName>
+        </component>
+    </settings>
+    <settings pass="oobeSystem">
+        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <OOBE>
+                <HideEULAPage>true</HideEULAPage>
+            </OOBE>
+            <UserAccounts>
+                <AdministratorPassword>
+                    <Value>{{ vm_admin_password }}</Value>
+                    <PlainText>true</PlainText>
+                </AdministratorPassword>
+            </UserAccounts>
+        </component>
+        <component name="Microsoft-Windows-International-Core" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <InputLocale>en-US</InputLocale>
+            <SystemLocale>en-US</SystemLocale>
+            <UILanguage>en-US</UILanguage>
+            <UILanguageFallback>en-US</UILanguageFallback>
+            <UserLocale>en-US</UserLocale>
+        </component>
+    </settings>
+</unattend>

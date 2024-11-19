@@ -1,0 +1,4 @@
+---
+vm_dns_domain: lab.uc2.io
+vm_interface_name: Ethernet Instance 0
+vm_namespace: windows-virtual-machines

@@ -1,0 +1,87 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  labels:
+    app: {{ _vm_name_lower }}
+  name: {{ _vm_name_lower }}
+  namespace: {{ vm_namespace }}
+spec:
+  dataVolumeTemplates:
+  - apiVersion: cdi.kubevirt.io/v1beta1
+    kind: DataVolume
+    metadata:
+      name: {{ _vm_name_lower }}
+    spec:
+      source:
+        pvc:
+          name: server-2022-template-volume
+          namespace: windows-virtual-machines
+      storage:
+        resources:
+          requests:
+            storage: "64424509440"
+  running: true
+  template:
+    metadata:
+      annotations:
+        vm.kubevirt.io/os: windows2k22
+        vm.kubevirt.io/workload: server
+      labels:
+        kubevirt.io/domain: {{ _vm_name_lower }}
+    spec:
+      architecture: amd64
+      domain:
+        clock:
+          timer:
+            hpet:
+              present: false
+            hyperv: {}
+            pit:
+              tickPolicy: delay
+            rtc:
+              tickPolicy: catchup
+          utc: {}
+        cpu:
+          cores: {{ vm_cpu_cores }}
+          sockets: {{ vm_cpu_sockets }}
+          threads: {{ vm_cpu_threads }}
+        devices:
+          disks:
+          - disk:
+              bus: virtio
+            name: rootdisk
+          - cdrom:
+              bus: sata
+            name: sysprep
+          inputs:
+          - bus: usb
+            name: tablet
+            type: tablet
+          interfaces:
+          - bridge: {}
+            model: virtio
+            name: default
+        firmware:
+          bootloader:
+            efi:
+              persistent: true
+              secureBoot: false
+        machine:
+          type: pc-q35-rhel9.4.0
+        memory:
+          guest: {{ vm_ram }}
+        resources: {}
+      evictionStrategy: LiveMigrate
+      networks:
+      - multus:
+          networkName: {{ vm_network_name }}
+        name: default
+      terminationGracePeriodSeconds: 3600
+      volumes:
+      - dataVolume:
+          name: {{ _vm_name_lower }}
+        name: rootdisk
+      - name: sysprep
+        sysprep:
+          configMap:
+            name: sysprep-{{ _vm_name_lower }}

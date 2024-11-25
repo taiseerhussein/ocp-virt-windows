@@ -41,6 +41,25 @@
         validate_certs: "{{ k8s_auth_verify_ssl | default(lookup('ansible.builtin.env', 'K8S_AUTH_VERIFY_SSL')) | default(false) }}"
       when:
         - vm_power_state.run_strategy != "Halted"
+        - not (vm_power_state.force | default(false))
+
+    - name: Use API to Power Off VM (Force Off)
+      vars:
+        _uri: "/apis/subresources.kubevirt.io/v1/namespaces/{{ vm_power_state.namespace }}/virtualmachines/{{ vm_power_state.name }}/stop"
+      ansible.builtin.uri:
+        body:
+          gracePeriod: 0
+        body_format: json
+        headers:
+          Authorization: "Bearer {{ k8s_auth_api_key | default(lookup('ansible.builtin.env', 'K8S_AUTH_API_KEY')) }}"
+        method: PUT
+        status_code:
+          - 202
+        url: "{{ k8s_auth_host | default(lookup('ansible.builtin.env', 'K8S_AUTH_HOST')) }}{{ _uri }}"
+        validate_certs: "{{ k8s_auth_verify_ssl | default(lookup('ansible.builtin.env', 'K8S_AUTH_VERIFY_SSL')) | default(false) }}"
+      when:
+        - vm_power_state.run_strategy != "Halted"
+        - vm_power_state.force | default(false)
 
 - name: Power on Virtual Machine
   when:

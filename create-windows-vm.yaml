@@ -3,3 +3,47 @@
   hosts: localhost
   roles:
     - role: winvm
+
+- name: Configure Windows VM
+  become: false
+  gather_facts: false
+  hosts: provisioning
+  tasks:
+    - name: Wait for VM
+      ansible.builtin.wait_for_connection:
+        delay: 60
+        timeout: 900
+
+    # WinRM is deployed moments before the setup module runs. Sometimes an additional
+    # attempt is required while WinRM settles.
+
+    - name: Gather Facts
+      ansible.builtin.setup:
+        gather_subset:
+          - all
+      delay: 5
+      register: setup_results
+      retries: 5
+      until:
+        - not setup_results.failed
+
+    - name: Debug setup_results
+      ansible.builtin.debug:
+        var: setup_results
+
+    - name: Configure Additional Disks
+      ansible.builtin.include_role:
+        name: windows-setup-disks
+
+    - name: Join Domain
+      microsoft.ad.membership:
+        dns_domain_name: "{{ vm_ad_domain }}"
+        domain_admin_password: "{{ vm_ad_admin_password }}"
+        domain_admin_user: "{{ vm_ad_admin_user }}"
+        domain_server: "{{ vm_ad_domain_server }}"
+        state: domain
+        reboot: true
+
+    - name: Configure Remote Desktop Access
+      ansible.builtin.include_role:
+        name: windows-enable-rdp

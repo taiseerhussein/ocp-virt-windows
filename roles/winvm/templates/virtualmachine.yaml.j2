@@ -14,13 +14,30 @@ spec:
     spec:
       source:
         pvc:
-          name: server-2022-template-volume
-          namespace: windows-virtual-machines
+          name: {{ vm_rootdisk_source_pvc.name }}
+          namespace: {{ vm_rootdisk_source_pvc.namespace }}
       storage:
         resources:
           requests:
-            storage: "64424509440"
-  running: true
+            storage: {{ vm_rootdisk_size }}
+        storageClassName: {{ vm_rootdisk_storageclass }}
+{% if vm_additional_disks is defined %}
+{% for disk in vm_additional_disks %}
+  - apiVersion: cdi.kubevirt.io/v1beta1
+    kind: DataVolume
+    metadata:
+      name: {{ _vm_name_lower }}-{{ disk.name }}
+    spec:
+      source:
+        blank: {}
+      storage:
+        resources:
+          requests:
+            storage: {{ disk.size }}
+        storageClassName: {{ disk.storage_class }}
+{% endfor %}
+{% endif %}
+  runStrategy: RerunOnFailure
   template:
     metadata:
       annotations:
@@ -50,6 +67,14 @@ spec:
           - disk:
               bus: virtio
             name: rootdisk
+{% if vm_additional_disks is defined %}
+{% for disk in vm_additional_disks %}
+          - disk:
+              bus: {{ disk.bus }}
+            name: {{ disk.name }}
+            serial: {{ disk.name }}
+{% endfor %}
+{% endif %}
           - cdrom:
               bus: sata
             name: sysprep
@@ -81,6 +106,13 @@ spec:
       - dataVolume:
           name: {{ _vm_name_lower }}
         name: rootdisk
+{% if vm_additional_disks is defined %}
+{% for disk in vm_additional_disks %}
+      - dataVolume:
+          name: {{ _vm_name_lower }}-{{ disk.name }}
+        name: {{ disk.name }}
+{% endfor %}
+{% endif %}
       - name: sysprep
         sysprep:
           configMap:

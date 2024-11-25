@@ -1,0 +1,19 @@
+---
+- name: Wait for IP in VirtualMachineInstance Status
+  vars:
+    _query: "[?interfaceName==`{{ vm_interface_name }}`].ipAddress"
+  kubernetes.core.k8s_info:
+    api_version: kubevirt.io/v1
+    kind: VirtualMachineInstance
+    name: "{{ vm_name | lower }}"
+    namespace: "{{ vm_namespace }}"
+  delay: 10
+  register: vmi_results
+  retries: 60
+  until:
+    - vmi_results.resources | count == 1
+    - vmi_results.resources[0].status is defined
+    - vmi_results.resources[0].status.interfaces is defined
+    - vmi_results.resources[0].status.interfaces | count > 1
+    - vmi_results.resources[0].status.interfaces | json_query(_query) | count == 1
+    - vmi_results.resources[0].status.interfaces | json_query(_query) | first == vm_ip

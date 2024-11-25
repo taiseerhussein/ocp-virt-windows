@@ -1,0 +1,9 @@
+---
+_run_strategy_required_off:
+  - Halted
+  - Manual
+  - RerunOnFailure
+_run_strategy_required_on:
+  - Always
+  - Manual
+  - RerunOnFailure

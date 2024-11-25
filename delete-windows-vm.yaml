@@ -1,0 +1,46 @@
+- name: Create IMI For VM
+  become: false
+  gather_facts: false
+  hosts: localhost
+  tasks:
+    - name: Add Domain Controller to IM Inventory
+      ansible.builtin.add_host:
+        ansible_connection: winrm
+        ansible_user: Administrator
+        ansible_password: "{{ vm_ad_admin_password }}"
+        ansible_winrm_server_cert_validation: ignore
+        ansible_port: 5986
+        groups: domain_controller
+        name: "{{ vm_ad_domain_server }}"
+
+- name: Remove VM from Active Directory
+  become: false
+  gather_facts: false
+  hosts: domain_controller
+  tasks:
+    - name: Remove Computer Account from Active Directory
+      microsoft.ad.computer:
+        domain_password: "{{ vm_ad_admin_password }}"
+        domain_server: "{{ vm_ad_domain_server }}"
+        domain_username: "{{ vm_ad_admin_user }}"
+        name: "{{ vm_name | upper }}"
+        state: absent
+
+- name: Delete VM From OpenShift
+  become: false
+  gather_facts: false
+  hosts: localhost
+  tasks:
+    - name: Delete VM
+      kubevirt.core.kubevirt_vm:
+        name: "{{ vm_name | lower }}"
+        namespace: "{{ vm_namespace }}"
+        state: absent
+
+    - name: Delete ConfigMap (unattend.xml)
+      kubernetes.core.k8s:
+        api_version: v1
+        kind: ConfigMap
+        name: "sysprep-{{ vm_name | lower }}"
+        namespace: "{{ vm_namespace }}"
+        state: absent

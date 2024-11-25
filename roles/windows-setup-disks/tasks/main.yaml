@@ -1,0 +1,99 @@
+---
+- name: Get Disk Info
+  community.windows.win_disk_facts:
+    filter:
+      - partitions
+      - physical_disk
+      - virtual_disk
+  register: disk_facts_results
+
+- name: Debug disk_facts_results
+  ansible.builtin.debug:
+    var: disk_facts_results
+
+# An operating system (OS) disk is mapped to a DataVolume using its serial number.
+# When additional disks are defined in the Virtual Machine Instance (VMI)
+# specification, we set the serial number of each disk to match the name of its
+# associated DataVolume. This serial number is discoverable using the 
+# win_disk_facts module, allowing us to map a DataVolume to a specific disk device
+# within the OS.
+
+- name: Build List of Target Disks Using List of Serial Numbers
+  vars:
+    _query: >
+      [?contains(`{{ vm_additional_disks | json_query("[].name") | to_json }}`, serial_number)]
+  ansible.builtin.set_fact:
+    target_disks: "{{ disk_facts_results.ansible_facts.ansible_disks | json_query(_query) }}"
+
+- name: Debug target_disks
+  ansible.builtin.debug:
+    var: target_disks
+
+- name: Count Existing Partitions on Target Disks
+  vars:
+    _query: "[*].partitions[?type!='Reserved'].type | []"
+  ansible.builtin.set_fact:
+    partition_count: "{{ target_disks | json_query(_query) | count }}"
+
+- name: Debug partition_count
+  ansible.builtin.debug:
+    var: partition_count
+
+- name: Consolidate Attributes into Single List for Easier Loops
+  vars:
+    _query_number: "[?serial_number=='{{ item.name }}'].number"
+    _query_path: "[?serial_number=='{{ item.name }}'].path"
+  ansible.builtin.set_fact:
+    disk_loop_list: >-
+      {{
+        disk_loop_list | default([]) +
+        [
+          {
+            'drive_letter': item.drive_letter,
+            'number': target_disks | json_query(_query_number) | first,
+            'path': target_disks | json_query(_query_path) | first,
+            'serial': item.name            
+          }
+        ]
+      }}
+  loop: "{{ vm_additional_disks }}"
+
+- name: Debug disk_loop_list
+  ansible.builtin.debug:
+    var: disk_loop_list
+
+# This block applies changes to the disks. Since this process only runs during
+# provisioning, the disks are expected to be uninitialized. For added safety, none
+# of these tasks will execute if a partition is detected or a disk is not discovered.
+
+- name: Setup Additional Disks
+  when:
+    - partition_count | int == 0
+    - target_disks | count == vm_additional_disks | count
+  block:
+    - name: Initialize Disks
+      community.windows.win_initialize_disk:
+        online: true
+        path: "{{ item.path }}"
+        style: gpt
+      loop: "{{ disk_loop_list }}"
+
+    - name: Partition Disks
+      community.windows.win_partition:
+        disk_number: "{{ item.number }}"
+        drive_letter: "{{ item.drive_letter }}"
+        gpt_type: basic_data
+        hidden: false
+        offline: false
+        partition_size: -1
+        read_only: false
+        state: present
+      loop: "{{ disk_loop_list }}"
+
+    - name: Format Partitions
+      community.windows.win_format:
+        compress: false
+        drive_letter: "{{ item.drive_letter }}"
+        file_system: ntfs
+        new_label: "{{ item.serial }}"
+      loop: "{{ disk_loop_list }}"

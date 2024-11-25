@@ -1,14 +1,40 @@
 ---
+vm_ad_admin_password: ChangeMe!
+vm_ad_admin_user: Administrator@uc2.io
+vm_ad_domain: uc2.io
+vm_ad_domain_server: ad.uc2.io
+vm_additional_disks:
+  - bus: virtio
+    name: sql1
+    size: 40Gi
+    storage_class: odf-storagecluster-ceph-rbd-virtualization
+    drive_letter: "E"
+  - bus: virtio
+    name: sql2
+    size: 50Gi
+    storage_class: odf-storagecluster-ceph-rbd-virtualization
+    drive_letter: "F"
+  - bus: virtio
+    name: sql3
+    size: 30Gi
+    storage_class: odf-storagecluster-ceph-rbd-virtualization
+    drive_letter: "G"
 vm_admin_password: ChangeMe!
 vm_cpu_cores: 1
 vm_cpu_sockets: 6
 vm_cpu_threads: 1
 vm_dns_domain: lab.uc2.io
-vm_dns_server: 172.16.10.2
+vm_dns_server: 172.16.80.20
 vm_gateway: 172.16.10.254
 vm_interface_name: Ethernet Instance 0
-vm_ip: 172.16.10.250/24
+vm_ip: 172.16.10.250
+vm_ip_cidr: 24
 vm_name: ServerTest01
 vm_namespace: windows-virtual-machines
 vm_network_name: default/vlan-100
 vm_ram: 32Gi
+vm_rootdisk_size: 60Gi
+vm_rootdisk_source_pvc:
+  name: server-2022-template-volume
+  namespace: windows-virtual-machines
+vm_rootdisk_storageclass: odf-storagecluster-ceph-rbd-virtualization

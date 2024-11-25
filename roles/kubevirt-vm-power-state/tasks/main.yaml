@@ -1,0 +1,78 @@
+- name: Assert Required Variables are Defined
+  ansible.builtin.assert:
+    that:
+      - vm_power_state is defined
+      - vm_power_state.name is defined
+      - vm_power_state.namespace is  defined
+      - vm_power_state.running is defined
+      - vm_power_state.run_strategy is defined
+
+- name: Power off Virtual Machine
+  when:
+    - not vm_power_state.running
+  block:
+    - name: Validate Run Strategy
+      ansible.builtin.assert:
+        fail_msg: "run_strategy must be one of { {{- _run_strategy_required_off | join(',') -}} }"
+        that:
+          - vm_power_state.run_strategy in _run_strategy_required_off
+
+    - name: Set Run Strategy
+      kubernetes.core.k8s:
+        resource_definition:
+          apiVersion: kubevirt.io/v1
+          kind: VirtualMachine
+          metadata:
+            name: "{{ vm_name | lower }}"
+            namespace: "{{ vm_namespace }}"
+          spec:
+            runStrategy: "{{ vm_power_state.run_strategy }}"
+
+    - name: Use API to Power Off VM
+      vars:
+        _uri: "/apis/subresources.kubevirt.io/v1/namespaces/{{ vm_power_state.namespace }}/virtualmachines/{{ vm_power_state.name }}/stop"
+      ansible.builtin.uri:
+        headers:
+          Authorization: "Bearer {{ k8s_auth_api_key | default(lookup('ansible.builtin.env', 'K8S_AUTH_API_KEY')) }}"
+        method: PUT
+        status_code:
+          - 202
+        url: "{{ k8s_auth_host | default(lookup('ansible.builtin.env', 'K8S_AUTH_HOST')) }}{{ _uri }}"
+        validate_certs: "{{ k8s_auth_verify_ssl | default(lookup('ansible.builtin.env', 'K8S_AUTH_VERIFY_SSL')) | default(false) }}"
+      when:
+        - vm_power_state.run_strategy != "Halted"
+
+- name: Power on Virtual Machine
+  when:
+    - vm_power_state.running
+  block:
+    - name: Validate Run Strategy
+      ansible.builtin.assert:
+        fail_msg: "run_strategy must be one of { {{- _run_strategy_required_on | join(',') -}} }"
+        that:
+          - vm_power_state.run_strategy in _run_strategy_required_on
+
+    - name: Set Run Strategy
+      kubernetes.core.k8s:
+        resource_definition:
+          apiVersion: kubevirt.io/v1
+          kind: VirtualMachine
+          metadata:
+            name: "{{ vm_name | lower }}"
+            namespace: "{{ vm_namespace }}"
+          spec:
+            runStrategy: "{{ vm_power_state.run_strategy }}"
+
+    - name: Use API to Power on VM
+      vars:
+        _uri: "/apis/subresources.kubevirt.io/v1/namespaces/{{ vm_power_state.namespace }}/virtualmachines/{{ vm_power_state.name }}/start"
+      ansible.builtin.uri:
+        headers:
+          Authorization: "Bearer {{ k8s_auth_api_key | default(lookup('ansible.builtin.env', 'K8S_AUTH_API_KEY')) }}"
+        method: PUT
+        status_code:
+          - 202
+        url: "{{ k8s_auth_host | default(lookup('ansible.builtin.env', 'K8S_AUTH_HOST')) }}{{ _uri }}"
+        validate_certs: "{{ k8s_auth_verify_ssl | default(lookup('ansible.builtin.env', 'K8S_AUTH_VERIFY_SSL')) | default(false) }}"
+      when:
+        - vm_power_state.run_strategy == "Manual"

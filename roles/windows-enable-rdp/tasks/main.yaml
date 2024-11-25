@@ -1,0 +1,29 @@
+- name: Enable Network Authentication for RDP Connections
+  ansible.windows.win_regedit:
+    data: 1
+    name: UserAuthentication
+    path: HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp
+    type: dword
+
+- name: Enable RDP Connections
+  ansible.windows.win_regedit:
+    data: 0
+    name: fDenyTSConnections
+    path: HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server
+    type: dword
+
+- name: Start/Enable Remote Desktop Service
+  ansible.windows.win_service:
+    name: TermService
+    start_mode: auto
+    state: started
+
+- name: Enable RDP Windows Firewall Rule
+  community.windows.win_firewall_rule:
+    action: allow
+    direction: in
+    enabled: true
+    localport: 3389
+    name: Remote Desktop
+    protocol: tcp
+    state: present

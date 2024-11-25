@@ -14,7 +14,7 @@
 - name: Verify ConfigMap Does Not Exist
   ansible.builtin.assert:
     fail_msg: "ConfigMap with unattend.xml for guest '{{ _vm_name_lower }}' already exists!"
-    success_msg: "ConfigMap with unattend.xml for guest '{{ vm_name }}' is missing, will create."
+    success_msg: "ConfigMap with unattend.xml for guest '{{ _vm_name_lower }}' is missing, will create."
     that:
       - configmap_results.resources | count == 0
 
@@ -36,3 +36,14 @@
     resource_definition: |
       {{ lookup('template', 'templates/virtualmachine.yaml.j2') }}
     state: present
+
+- name: Add Host to Dynamic Inventory
+  ansible.builtin.add_host:
+    ansible_connection: winrm
+    ansible_user: Administrator
+    ansible_password: "{{ vm_admin_password }}"
+    ansible_winrm_server_cert_validation: ignore
+    ansible_host: "{{ vm_ip }}"
+    ansible_port: 5986
+    groups: provisioning
+    name: "{{ _vm_name_lower }}"

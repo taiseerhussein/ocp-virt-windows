@@ -21,7 +21,7 @@
 - name: Build List of Target Disks Using List of Serial Numbers
   vars:
     _query: >
-      [?contains(`{{ vm_additional_disks | json_query("[].name") | to_json }}`, serial_number)]
+      [?contains(`{{ winvm_additional_disks | json_query("[].name") | to_json }}`, serial_number)]
   ansible.builtin.set_fact:
     target_disks: "{{ disk_facts_results.ansible_facts.ansible_disks | json_query(_query) }}"
 
@@ -56,7 +56,7 @@
           }
         ]
       }}
-  loop: "{{ vm_additional_disks }}"
+  loop: "{{ winvm_additional_disks }}"
 
 - name: Debug disk_loop_list
   ansible.builtin.debug:
@@ -69,7 +69,7 @@
 - name: Setup Additional Disks
   when:
     - partition_count | int == 0
-    - target_disks | count == vm_additional_disks | count
+    - target_disks | count == winvm_additional_disks | count
   block:
     - name: Initialize Disks
       community.windows.win_initialize_disk:

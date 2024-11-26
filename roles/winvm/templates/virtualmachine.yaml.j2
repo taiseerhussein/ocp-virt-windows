@@ -4,7 +4,7 @@ metadata:
   labels:
     app: {{ _vm_name_lower }}
   name: {{ _vm_name_lower }}
-  namespace: {{ vm_namespace }}
+  namespace: {{ winvm_namespace }}
 spec:
   dataVolumeTemplates:
   - apiVersion: cdi.kubevirt.io/v1beta1
@@ -14,15 +14,15 @@ spec:
     spec:
       source:
         pvc:
-          name: {{ vm_rootdisk_source_pvc.name }}
-          namespace: {{ vm_rootdisk_source_pvc.namespace }}
+          name: {{ winvm_rootdisk_source_pvc.name }}
+          namespace: {{ winvm_rootdisk_source_pvc.namespace }}
       storage:
         resources:
           requests:
-            storage: {{ vm_rootdisk_size }}
-        storageClassName: {{ vm_rootdisk_storageclass }}
-{% if vm_additional_disks is defined %}
-{% for disk in vm_additional_disks %}
+            storage: {{ winvm_rootdisk_size }}
+        storageClassName: {{ winvm_rootdisk_storageclass }}
+{% if winvm_additional_disks is defined %}
+{% for disk in winvm_additional_disks %}
   - apiVersion: cdi.kubevirt.io/v1beta1
     kind: DataVolume
     metadata:
@@ -59,16 +59,16 @@ spec:
               tickPolicy: catchup
           utc: {}
         cpu:
-          cores: {{ vm_cpu_cores }}
-          sockets: {{ vm_cpu_sockets }}
-          threads: {{ vm_cpu_threads }}
+          cores: {{ winvm_cpu_cores }}
+          sockets: {{ winvm_cpu_sockets }}
+          threads: {{ winvm_cpu_threads }}
         devices:
           disks:
           - disk:
               bus: virtio
             name: rootdisk
-{% if vm_additional_disks is defined %}
-{% for disk in vm_additional_disks %}
+{% if winvm_additional_disks is defined %}
+{% for disk in winvm_additional_disks %}
           - disk:
               bus: {{ disk.bus }}
             name: {{ disk.name }}
@@ -94,20 +94,20 @@ spec:
         machine:
           type: pc-q35-rhel9.4.0
         memory:
-          guest: {{ vm_ram }}
+          guest: {{ winvm_ram }}
         resources: {}
       evictionStrategy: LiveMigrate
       networks:
       - multus:
-          networkName: {{ vm_network_name }}
+          networkName: {{ winvm_network_name }}
         name: default
       terminationGracePeriodSeconds: 3600
       volumes:
       - dataVolume:
           name: {{ _vm_name_lower }}
         name: rootdisk
-{% if vm_additional_disks is defined %}
-{% for disk in vm_additional_disks %}
+{% if winvm_additional_disks is defined %}
+{% for disk in winvm_additional_disks %}
       - dataVolume:
           name: {{ _vm_name_lower }}-{{ disk.name }}
         name: {{ disk.name }}

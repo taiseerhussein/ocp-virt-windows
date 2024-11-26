@@ -1,22 +1,34 @@
 - name: Set Hostname Facts
   ansible.builtin.set_fact:
-    _vm_name_lower: "{{ vm_name | lower }}"
-    _vm_name_upper: "{{ vm_name | upper }}"
+    _vm_name_lower: "{{ winvm_name | lower }}"
+    _vm_name_upper: "{{ winvm_name | upper }}"
+    _random_password: "{{ lookup('ansible.builtin.password', '/dev/null', chars=['ascii_letters', 'digits'], length=18) }}"
 
 - name: Query ConfigMap
   kubernetes.core.k8s_info:
     api_version: v1
     kind: ConfigMap
     name: "sysprep-{{ _vm_name_lower }}"
-    namespace: "{{ vm_namespace }}"
+    namespace: "{{ winvm_namespace }}"
   register: configmap_results
 
-- name: Verify ConfigMap Does Not Exist
+- name: Query VirtualMachine
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: VirtualMachine
+    name: "{{ _vm_name_lower }}"
+    namespace: "{{ winvm_namespace }}"
+  register: virtualmachine_results
+
+- name: Verify ConfigMap/VirtualMachine Do Not Already Exist
   ansible.builtin.assert:
-    fail_msg: "ConfigMap with unattend.xml for guest '{{ _vm_name_lower }}' already exists!"
-    success_msg: "ConfigMap with unattend.xml for guest '{{ _vm_name_lower }}' is missing, will create."
+    fail_msg: |-
+      ConfigMap (count: {{ configmap_results.resources | count }}) or VirtualMachine
+      (count: {{ virtualmachine_results.resources | count }}) already exist!
+    success_msg: "VirtualMachine '{{ winvm_namespace }}/{{ _vm_name_lower }}' is missing, will create."
     that:
       - configmap_results.resources | count == 0
+      - virtualmachine_results.resources | count == 0
 
 - name: Create ConfigMap for unattend.xml
   kubernetes.core.k8s:
@@ -28,7 +40,7 @@
       kind: ConfigMap
       metadata:
         name: "sysprep-{{ _vm_name_lower }}"
-        namespace: "{{ vm_namespace }}"
+        namespace: "{{ winvm_namespace }}"
     state: present
 
 - name: Create VirtualMachine Resource
@@ -37,13 +49,19 @@
       {{ lookup('template', 'templates/virtualmachine.yaml.j2') }}
     state: present
 
+- name: Wait for IP in VirtualMachineInstance
+  ansible.builtin.include_role:
+    name: kubevirt-wait-for-ip
+  when:
+    - winvm_wait_for_ip | default(false)
+
 - name: Add Host to Dynamic Inventory
   ansible.builtin.add_host:
     ansible_connection: winrm
     ansible_user: Administrator
-    ansible_password: "{{ vm_admin_password }}"
+    ansible_password: "{{ _random_password }}"
     ansible_winrm_server_cert_validation: ignore
-    ansible_host: "{{ vm_ip }}"
+    ansible_host: "{{ winvm_ip }}"
     ansible_port: 5986
     groups: provisioning
     name: "{{ _vm_name_lower }}"

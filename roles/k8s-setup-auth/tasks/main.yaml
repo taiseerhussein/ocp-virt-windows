@@ -1,0 +1,138 @@
+---
+- name: Search Environment Variables for TOKEN
+  when:
+    - k8s_setup_auth_search_environment
+  block:
+    - name: Check for K8S_AUTH_API_KEY and K8S_AUTH_HOST
+      ansible.builtin.set_fact:
+        _api_key: "{{ lookup('ansible.builtin.env', 'K8S_AUTH_API_KEY') }}"
+        _api_host: "{{ lookup('ansible.builtin.env', 'K8S_AUTH_HOST') }}"
+
+    - name: Set Credentials
+      ansible.builtin.set_fact:
+        k8s_auth_api_key: "{{ _api_key }}"
+        k8s_auth_host: "{{ _api_host }}"
+      when:
+        - _api_key is defined
+        - _api_key != ""
+        - _api_host is defined
+        - _api_host != ""
+
+- name: Search KUBECONFIG for Token
+  when:
+    - k8s_setup_auth_search_kubeconfig
+    - k8s_auth_api_key is not defined
+    - k8s_auth_host is not defined
+  block:
+    - name: Check For KUBECONFIG Environment Variable
+      ansible.builtin.set_fact:
+        _env_kubeconfig: "{{ lookup('ansible.builtin.env', 'KUBECONFIG') }}"
+
+    - name: Assert KUBECONFIG is Defined
+      ansible.builtin.assert:
+        fail_msg: "The KUBECONFIG environment variable is not defined! No more credentials to try..."
+        that:
+          _env_kubeconfig != ''
+
+    - name: Debug
+      ansible.builtin.debug:
+        msg: "{{ _env_kubeconfig }}"
+
+    - name: Check if KUBECONFIG File Exists
+      ansible.builtin.stat:
+        path: "{{ _env_kubeconfig }}"
+      register: stat_results
+
+    - name: Assert KUBECONFIG File Found
+      ansible.builtin.assert:
+        fail_msg: |-
+          The KUBECONFIG environment variable is set but the file ({{ _env_kubeconfig }}) does not exist!
+        that:
+          - stat_results.stat.exists
+
+    - name: Load Contents of KUBECONFIG File
+      ansible.builtin.set_fact:
+        _kubeconfig: "{{ lookup('ansible.builtin.file', '{{ _env_kubeconfig }}') | from_yaml }}"
+
+    - name: Assert Required Attributes are Defined
+      ansible.builtin.assert:
+        fail_msg: |-
+          Unable to find all attributes (clusters, contexts, current-context, users) in KUBECONFIG!
+        that:
+          - _kubeconfig.clusters is defined
+          - _kubeconfig.contexts is defined
+          - _kubeconfig['current-context'] is defined
+          - _kubeconfig.users is defined
+
+    - name: Debug Current Context Name
+      ansible.builtin.debug:
+        msg: "{{ _kubeconfig['current-context']  }}"
+
+    - name: Search for Context
+      ansible.builtin.set_fact:
+        _kubeconfig_context: >-
+          {{
+            _kubeconfig.contexts |
+              selectattr('name', 'equalto', _kubeconfig['current-context']) |
+              map(attribute='context') | 
+              first
+          }}
+
+    - name: Debug Current Context (_kubeconfig_context)
+      ansible.builtin.debug:
+        var: _kubeconfig_context
+
+    - name: Assert cluster and user Attributes Are Defined in Context
+      ansible.builtin.assert:
+        fail_msg: |-
+          Unable to read cluster/user attributes in context {{ _kubeconfig['current-context'] }}!
+        that:
+          - _kubeconfig_context.cluster is defined
+          - _kubeconfig_context.user is defined
+
+    - name: Search for User
+      ansible.builtin.set_fact:
+        _kubeconfig_user: >-
+          {{
+            _kubeconfig.users |
+              selectattr('name', 'equalto', _kubeconfig_context.user) |
+              map(attribute='user') |
+              first
+          }}
+
+    - name: Debug Current User (_kubeconfig_user)
+      ansible.builtin.debug:
+        var: _kubeconfig_user
+
+    - name: Assert User Token is Present
+      ansible.builtin.assert:
+        fail_msg: "Unable to find user token!"
+        that:
+          - _kubeconfig_user.token is defined
+
+    - name: Search for Cluster
+      ansible.builtin.set_fact:
+        _kubeconfig_cluster: >-
+          {{
+            _kubeconfig.clusters |
+              selectattr('name', 'equalto', _kubeconfig_context.cluster) |
+              map(attribute='cluster') |
+              first
+          }}
+
+    - name: Debug Current Cluster (_kubeconfig_cluster)
+      ansible.builtin.debug:
+        var: _kubeconfig_cluster
+
+    - name: Assert Server and CA are Defined
+      ansible.builtin.assert:
+        fail_msg: |-
+          Unable to find certificate-authority or server attributes for cluster {{ _kubeconfig_context.cluster }}!
+        that:
+          - _kubeconfig_cluster['certificate-authority'] is defined
+          - _kubeconfig_cluster.server is defined
+
+    - name: Set Credentials
+      ansible.builtin.set_fact:
+        k8s_auth_api_key: "{{ _kubeconfig_user.token }}"
+        k8s_auth_host: "{{ _kubeconfig_cluster.server }}"

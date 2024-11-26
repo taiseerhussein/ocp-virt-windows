@@ -6,20 +6,20 @@
             <Interface wcm:action="add">
             <!-- Name of the Ethernet Interface in the Template (from Network Connections) -->
             <!-- See examples using the MAC address as well -->
-            <Identifier>{{ vm_interface_name }}</Identifier>
+            <Identifier>{{ winvm_interface_name }}</Identifier>
             <Ipv4Settings>
                 <DhcpEnabled>false</DhcpEnabled>
                 <Metric>10</Metric>
                 <RouterDiscoveryEnabled>false</RouterDiscoveryEnabled>
             </Ipv4Settings>
             <UnicastIpAddresses>
-                <IpAddress wcm:action="add" wcm:keyValue="1">{{ vm_ip }}/{{ vm_ip_cidr }}</IpAddress>
+                <IpAddress wcm:action="add" wcm:keyValue="1">{{ winvm_ip }}/{{ winvm_ip_cidr }}</IpAddress>
             </UnicastIpAddresses>
             <Routes>
                 <Route wcm:action="add">
                 <Identifier>1</Identifier>
                 <Metric>10</Metric>
-                <NextHopAddress>{{ vm_gateway }}</NextHopAddress>
+                <NextHopAddress>{{ winvm_gateway }}</NextHopAddress>
                 <Prefix>0.0.0.0/0</Prefix>
                 </Route>
             </Routes>
@@ -31,15 +31,15 @@
                 <Interface wcm:action="add">
                 <Identifier>Ethernet Instance 0</Identifier>
                 <DNSServerSearchOrder>
-                    <IpAddress wcm:action="add" wcm:keyValue="1">{{ vm_dns_server }}</IpAddress>
+                    <IpAddress wcm:action="add" wcm:keyValue="1">{{ winvm_dns_server }}</IpAddress>
                 </DNSServerSearchOrder>
                 <DisableDynamicUpdate>true</DisableDynamicUpdate>
-                <DNSDomain>{{ vm_dns_domain }}</DNSDomain>
+                <DNSDomain>{{ winvm_dns_domain }}</DNSDomain>
                 <EnableAdapterDomainNameRegistration>true</EnableAdapterDomainNameRegistration>
                 </Interface>
             </Interfaces>
             <DNSSuffixSearchOrder>
-                <DomainName wcm:action="add" wcm:keyValue="1">{{ vm_dns_domain }}</DomainName>
+                <DomainName wcm:action="add" wcm:keyValue="1">{{ winvm_dns_domain }}</DomainName>
             </DNSSuffixSearchOrder>
         </component>
         <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -53,14 +53,14 @@
             </OOBE>
             <UserAccounts>
                 <AdministratorPassword>
-                    <Value>{{ vm_admin_password }}</Value>
+                    <Value>{{ _random_password }}</Value>
                     <PlainText>true</PlainText>
                 </AdministratorPassword>
             </UserAccounts>
             <AutoLogon>
                 <Username>Administrator</Username>
                 <Password>
-                    <Value>{{ vm_admin_password }}</Value>
+                    <Value>{{ _random_password }}</Value>
                     <PlainText>true</PlainText>
                 </Password>
                 <Enabled>true</Enabled>

@@ -7,3 +7,4 @@ _run_strategy_required_on:
   - Always
   - Manual
   - RerunOnFailure
+k8s_auth_verify_ssl: false

@@ -4,7 +4,7 @@
   roles:
     - role: winvm
 
-- name: Configure Windows VM
+- name: Wait For Connection and Change Administrator Password
   become: false
   gather_facts: false
   hosts: provisioning
@@ -27,23 +27,33 @@
       until:
         - not setup_results.failed
 
-    - name: Debug setup_results
-      ansible.builtin.debug:
-        var: setup_results
+    - name: Change Administrator Password
+      block:
+        - name: Set Password
+          ansible.windows.win_user:
+            name: Administrator
+            password: "{{ winvm_admin_password }}"
+      rescue:
+        - name: Update Password in Inventory
+          ansible.builtin.set_fact:
+            ansible_password: "{{ winvm_admin_password }}"
 
-    - name: Configure Additional Disks
-      ansible.builtin.include_role:
-        name: windows-setup-disks
-
-    - name: Join Domain
-      microsoft.ad.membership:
-        dns_domain_name: "{{ vm_ad_domain }}"
-        domain_admin_password: "{{ vm_ad_admin_password }}"
-        domain_admin_user: "{{ vm_ad_admin_user }}"
-        domain_server: "{{ vm_ad_domain_server }}"
-        state: domain
-        reboot: true
+        - name: Test Updated Credentials
+          ansible.windows.win_ping:
 
     - name: Configure Remote Desktop Access
       ansible.builtin.include_role:
         name: windows-enable-rdp
+
+    - name: Join Domain
+      microsoft.ad.membership:
+        dns_domain_name: "{{ winvm_ad_domain }}"
+        domain_admin_password: "{{ winvm_ad_admin_password }}"
+        domain_admin_user: "{{ winvm_ad_admin_user }}"
+        domain_server: "{{ winvm_ad_domain_server }}"
+        state: domain
+        reboot: true
+
+    - name: Configure Additional Disks
+      ansible.builtin.include_role:
+        name: windows-setup-disks

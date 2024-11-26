@@ -7,6 +7,19 @@
       - vm_power_state.running is defined
       - vm_power_state.run_strategy is defined
 
+# For API calls using the uri module, if credentials are not explicitly passed to the role
+#  using k8s_auth_api_key/k8s_auth_host variables then attempt to find credentials using
+#  K8S_AUTH_* environment variables or a KUBECONFIG file.
+
+##
+# TODO: Verify VM Exists, Also Verify State
+
+- name: Find Credentials Using Environment Variables or KUBECONFIG
+  ansible.builtin.include_role:
+    name: k8s-setup-auth
+  when:
+    - (k8s_auth_api_key is not defined) or (k8s_auth_host is not defined)
+
 - name: Power off Virtual Machine
   when:
     - not vm_power_state.running
@@ -23,22 +36,23 @@
           apiVersion: kubevirt.io/v1
           kind: VirtualMachine
           metadata:
-            name: "{{ vm_name | lower }}"
-            namespace: "{{ vm_namespace }}"
+            name: "{{ vm_power_state.name | lower }}"
+            namespace: "{{ vm_power_state.namespace }}"
           spec:
             runStrategy: "{{ vm_power_state.run_strategy }}"
+        validate_certs: "{{ k8s_auth_verify_ssl }}"
 
     - name: Use API to Power Off VM
       vars:
         _uri: "/apis/subresources.kubevirt.io/v1/namespaces/{{ vm_power_state.namespace }}/virtualmachines/{{ vm_power_state.name }}/stop"
       ansible.builtin.uri:
         headers:
-          Authorization: "Bearer {{ k8s_auth_api_key | default(lookup('ansible.builtin.env', 'K8S_AUTH_API_KEY')) }}"
+          Authorization: "Bearer {{ k8s_auth_api_key }}"
         method: PUT
         status_code:
           - 202
-        url: "{{ k8s_auth_host | default(lookup('ansible.builtin.env', 'K8S_AUTH_HOST')) }}{{ _uri }}"
-        validate_certs: "{{ k8s_auth_verify_ssl | default(lookup('ansible.builtin.env', 'K8S_AUTH_VERIFY_SSL')) | default(false) }}"
+        url: "{{ k8s_auth_host }}{{ _uri }}"
+        validate_certs: "{{ k8s_auth_verify_ssl }}"
       when:
         - vm_power_state.run_strategy != "Halted"
         - not (vm_power_state.force | default(false))
@@ -51,12 +65,12 @@
           gracePeriod: 0
         body_format: json
         headers:
-          Authorization: "Bearer {{ k8s_auth_api_key | default(lookup('ansible.builtin.env', 'K8S_AUTH_API_KEY')) }}"
+          Authorization: "Bearer {{ k8s_auth_api_key }}"
         method: PUT
         status_code:
           - 202
-        url: "{{ k8s_auth_host | default(lookup('ansible.builtin.env', 'K8S_AUTH_HOST')) }}{{ _uri }}"
-        validate_certs: "{{ k8s_auth_verify_ssl | default(lookup('ansible.builtin.env', 'K8S_AUTH_VERIFY_SSL')) | default(false) }}"
+        url: "{{ k8s_auth_host }}{{ _uri }}"
+        validate_certs: "{{ k8s_auth_verify_ssl }}"
       when:
         - vm_power_state.run_strategy != "Halted"
         - vm_power_state.force | default(false)
@@ -77,21 +91,22 @@
           apiVersion: kubevirt.io/v1
           kind: VirtualMachine
           metadata:
-            name: "{{ vm_name | lower }}"
-            namespace: "{{ vm_namespace }}"
+            name: "{{ vm_power_state.name | lower }}"
+            namespace: "{{ vm_power_state.namespace }}"
           spec:
             runStrategy: "{{ vm_power_state.run_strategy }}"
+        validate_certs: "{{ k8s_auth_verify_ssl }}"
 
     - name: Use API to Power on VM
       vars:
         _uri: "/apis/subresources.kubevirt.io/v1/namespaces/{{ vm_power_state.namespace }}/virtualmachines/{{ vm_power_state.name }}/start"
       ansible.builtin.uri:
         headers:
-          Authorization: "Bearer {{ k8s_auth_api_key | default(lookup('ansible.builtin.env', 'K8S_AUTH_API_KEY')) }}"
+          Authorization: "Bearer {{ k8s_auth_api_key }}"
         method: PUT
         status_code:
           - 202
-        url: "{{ k8s_auth_host | default(lookup('ansible.builtin.env', 'K8S_AUTH_HOST')) }}{{ _uri }}"
-        validate_certs: "{{ k8s_auth_verify_ssl | default(lookup('ansible.builtin.env', 'K8S_AUTH_VERIFY_SSL')) | default(false) }}"
+        url: "{{ k8s_auth_host }}{{ _uri }}"
+        validate_certs: "{{ k8s_auth_verify_ssl }}"
       when:
         - vm_power_state.run_strategy == "Manual"

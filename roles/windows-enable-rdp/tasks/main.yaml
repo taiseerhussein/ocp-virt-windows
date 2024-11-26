@@ -1,3 +1,4 @@
+---
 - name: Enable Network Authentication for RDP Connections
   ansible.windows.win_regedit:
     data: 1

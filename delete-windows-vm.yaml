@@ -7,11 +7,11 @@
       ansible.builtin.add_host:
         ansible_connection: winrm
         ansible_user: Administrator
-        ansible_password: "{{ vm_ad_admin_password }}"
+        ansible_password: "{{ winvm_ad_admin_password }}"
         ansible_winrm_server_cert_validation: ignore
         ansible_port: 5986
         groups: domain_controller
-        name: "{{ vm_ad_domain_server }}"
+        name: "{{ winvm_ad_domain_server }}"
 
 - name: Remove VM from Active Directory
   become: false
@@ -20,10 +20,10 @@
   tasks:
     - name: Remove Computer Account from Active Directory
       microsoft.ad.computer:
-        domain_password: "{{ vm_ad_admin_password }}"
-        domain_server: "{{ vm_ad_domain_server }}"
-        domain_username: "{{ vm_ad_admin_user }}"
-        name: "{{ vm_name | upper }}"
+        domain_password: "{{ winvm_ad_admin_password }}"
+        domain_server: "{{ winvm_ad_domain_server }}"
+        domain_username: "{{ winvm_ad_admin_user }}"
+        name: "{{ winvm_name | upper }}"
         state: absent
 
 - name: Delete VM From OpenShift
@@ -31,16 +31,27 @@
   gather_facts: false
   hosts: localhost
   tasks:
+    - name: Force VM Shutdown
+      vars:
+        vm_power_state:
+          force: true
+          name: "{{ winvm_name }}"
+          namespace: "{{ winvm_namespace }}"
+          running: false
+          run_strategy: Halted
+      ansible.builtin.include_role:
+        name: kubevirt-vm-power-state
+
     - name: Delete VM
       kubevirt.core.kubevirt_vm:
-        name: "{{ vm_name | lower }}"
-        namespace: "{{ vm_namespace }}"
+        name: "{{ winvm_name | lower }}"
+        namespace: "{{ winvm_namespace }}"
         state: absent
 
     - name: Delete ConfigMap (unattend.xml)
       kubernetes.core.k8s:
         api_version: v1
         kind: ConfigMap
-        name: "sysprep-{{ vm_name | lower }}"
-        namespace: "{{ vm_namespace }}"
+        name: "sysprep-{{ winvm_name | lower }}"
+        namespace: "{{ winvm_namespace }}"
         state: absent

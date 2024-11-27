@@ -1,2 +1,3 @@
 ---
+winvm_ad_domain_join: false
 winvm_wait_for_ip: false

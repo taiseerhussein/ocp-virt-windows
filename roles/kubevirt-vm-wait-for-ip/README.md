@@ -10,10 +10,10 @@ This role would typically be used during the provisioning process. Once a VM is 
 
 |Variable|Type|Required|Description|
 |:---|:---|:---|:---|
-|winvm_interface_name|String|True|Name of the interface as defined in the guest OS|
-|winvm_ip|String|True|IP to wait for
-|winvm_name|String|True|Name of the virtual machine|
-|winvm_namespace|String|True|Namespace containing the virtual machine|
+|`winvm_interface_name`|String|True|Name of the interface as defined in the guest OS|
+|`winvm_ip`|String|True|IP to wait for
+|`winvm_name`|String|True|Name of the virtual machine|
+|`winvm_namespace`|String|True|Namespace containing the virtual machine|
 
 ## Examples
 

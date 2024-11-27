@@ -8,23 +8,29 @@ Power state is mostly affected by setting the `runStrategy` on a `VirtualMachine
 
 |Strategy|Description|
 |:---|:---|
-|Always|The VM is always running. KubeVirt will attempt to keep the VM running indefinitely. If the VM crashes or the node fails, KubeVirt will automatically restart it on the same or another node.|
-|RerunOnFailure|The VM starts immediately and restarts only if it fails (exits with a non-zero exit code). If the VM is stopped gracefully (exits with a zero exit code), it will not restart.|
-|Manual|The VM does not start automatically. You must explicitly start or stop the VM using `virtctl` or the API.|
-|Halted|The VM is explicitly halted and will not run until the strategy is changed.|
+|`Always`|The VM is always running. KubeVirt will attempt to keep the VM running indefinitely. If the VM crashes or the node fails, KubeVirt will automatically restart it on the same or another node.|
+|`RerunOnFailure`|The VM starts immediately and restarts only if it fails (exits with a non-zero exit code). If the VM is stopped gracefully (exits with a zero exit code), it will not restart.|
+|`Manual`|The VM does not start automatically. You must explicitly start or stop the VM using `virtctl` or the API.|
+|`Halted`|The VM is explicitly halted and will not run until the strategy is changed.|
 
-The `kubevirt-vm-power-state` role will mostly use the run strategy to control power state. For example, if `run_strategy` is set to `Always` or `RerunOnFailure` and a VM is powered off the VM will start. If `run_strategy` is set to `Manual`, an API call will be used. The same logic can be used to power off a VM set to `Manual`. The API is also used when powering off a VM and `force` is set to `true` (this effectivly sets `gracePeriod` to `0` in the API request body).
+> [!IMPORTANT]  
+> The `kubevirt-vm-power-state` role will mostly use the run strategy to control power state. For example, if `run_strategy` is set to `Always` or `RerunOnFailure` and a VM is powered off the VM will start. If `run_strategy` is set to `Manual`, an API call will be used. The same logic can be used to power off a VM set to `Manual`. The API is also used when powering off a VM and `force` is set to `true` (this effectivly sets `gracePeriod` to `0` in the API request body).
+
+## Custom Types
+
+|Custom Type|Variable|Type|Required|Description|
+|:---|:---|:---|:---|:---|
+|PowerState|`force`|Boolean|False|When set to `true`, the VM will be force powered off (i.e. terminationGracePeriodSeconds will be set to 0).
+|PowerState|`name`|String|True|Name of the virtual machine.|
+|PowerState|`namespace`|String|True|Namespace containing the virtual machine.|
+|PowerState|`running`|Boolean|True|Should the VM be powered on or off.|
+|PowerState|`run_strategy`|Enum|True|The run strategy to use to control power state. When `running` is `true`, `run_strategy` must be one of `Always`, `RerunOnFailure`, or `Manual`. When `running` is set to  `false`, `run_strategy` must be one of `RerunOnFailure`, `Manual`, or `Halted`|
 
 ## Variables
 
 |Variable|Type|Required|Description|
 |:---|:---|:---|:---|
-|vm_power_state|Dictionary|True|All role specific vars defined in this dictionary (see below)|
-|vm_power_state.force|Boolean|False|When set to `true`, the VM will be force powered off (i.e. terminationGracePeriodSeconds will be set to 0).
-|vm_power_state.name|String|True|Name of the virtual machine.|
-|vm_power_state.namespace|String|True|Namespace containing the virtual machine.|
-|vm_power_state.running|Boolean|True|Should the VM be powered on or off.|
-|vm_power_state.run_strategy|Enum|True|The run strategy to use to control power state. When `running` is `true`, `run_strategy` must be one of `Always`, `RerunOnFailure`, or `Manual`. When `running` is set to  `false`, `run_strategy` must be one of `RerunOnFailure`, `Manual`, or `Halted`|
+|`vm_power_state`|PowerState|True|Dictionary containing attributes for PowerState (see custom types above) |
 
 ## Examples
 

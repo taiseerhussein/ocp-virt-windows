@@ -2,6 +2,7 @@
 winvm_ad_admin_password: ChangeMe!
 winvm_ad_admin_user: Administrator@uc2.io
 winvm_ad_domain: uc2.io
+winvm_ad_domain_join: true
 winvm_ad_domain_server: ad.uc2.io
 winvm_additional_disks:
   - bus: virtio

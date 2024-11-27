@@ -17,17 +17,17 @@ Since this role is typically used during the provisioning process, additional di
 
 |Custom Type|Variable|Type|Required|Description|
 |:---|:---|:---|:---|:---|
-|Disks|bus|String|True|Bus type to use. Should be set to one of `virtio` (preferred), `sata`, `scsi` or `usb`|
-|Disks|name|String|True|Name of the volume in the `VirtualMachineInstance` spec. Also used as the disk serial number (see notes)|
-|Disks|size|String|True|Size of the disk to be created|
-|Disks|storage_class|String|True|StorageClass used by the DataVolume (disk) to create PVC|
-|Disks|drive_letter|String|True|Drive letter to assign disk in Windows|
+|Disks|`bus`|String|True|Bus type to use. Should be set to one of `virtio` (preferred), `sata`, `scsi` or `usb`|
+|Disks|`drive_letter`|String|True|Drive letter to assign disk in Windows|
+|Disks|`name`|String|True|Name of the volume in the `VirtualMachineInstance` spec. Also used as the disk serial number (see notes)|
+|Disks|`size`|String|True|Size of the disk to be created|
+|Disks|`storage_class`|String|True|StorageClass used by the DataVolume (disk) to create PVC|
 
 ## Variables
 
 |Variable|Type|Required|Description|
 |:---|:---|:---|:---|
-|vm_additional_disks|List\<Disks\>|True|List of dictionaries with each element representing a disk and its properties (see custom types above)|
+|`vm_additional_disks`|List\<Disks\>|True|List of dictionaries with each element representing a disk and its properties (see custom types above)|
 
 ## Examples
 

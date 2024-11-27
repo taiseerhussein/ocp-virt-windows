@@ -12,11 +12,13 @@ Roles included:
 
 * `windows-setup-disks`: Configures additional disks added during VM provisioning. The role initializes disks, creates partitions, formats them with NTFS, and assigns drive letters. It relies on consistent disk naming to map DataVolumes to specific disks within the guest OS.
 
-Each role comes with detailed notes, required variables, and example playbooks to help you integrate them into your Ansible workflows effectively.
+* `winvm`: Deploy a Windows VM customized with sysprep (`unattend.xml`). Supports a static networking configuration, setting the computer name (hostname), configuring WinRM, etc. 
+
+Each role comes with detailed notes, required variables, and example tasks to help you integrate them into your Ansible workflows effectively.
 
 ## Preparing Your Environment
 
-To being, find a good working directory in your workstation and clone this repository using the following command:
+The modules used in these roles have specific Python dependencies and collection requirements. To build an Ansible environment supporting these dependencies/requirements, find a good working directory in your workstation and clone this repository using the following command:
 
 ```shell
 git clone https://github.com/nasx/ocp-virt-windows.git
@@ -55,6 +57,3 @@ Documentation for the various roles are included in the README.md in each role's
 * [windows-enable-rdp](https://github.com/nasx/ocp-virt-windows/blob/main/roles/windows-enable-rdp/README.md)
 * [windows-setup-disks](https://github.com/nasx/ocp-virt-windows/blob/main/roles/windows-setup-disks/README.md)
 * [winvm](https://github.com/nasx/ocp-virt-windows/blob/main/roles/winvm/README.md)
-
-
-

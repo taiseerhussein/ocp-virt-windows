@@ -1,5 +1,5 @@
 ---
-winvm_ad_admin_password: ChangeMe!
+winvm_ad_admin_password: aap-virt
 winvm_ad_admin_user: Administrator@uc2.io
 winvm_ad_domain: uc2.io
 winvm_ad_domain_join: true
@@ -22,7 +22,7 @@ winvm_additional_disks:
     storage_class: odf-storagecluster-ceph-rbd-virtualization
 winvm_admin_password: ChangeMe!
 winvm_ansible_service_account: ansible-sa
-winvm_ansible_service_account_password: ChangeMe!
+winvm_ansible_service_account_password: aap-virt
 winvm_cpu_cores: 1
 winvm_cpu_sockets: 6
 winvm_cpu_threads: 1
@@ -33,7 +33,7 @@ winvm_interface_name: Ethernet Instance 0
 winvm_ip: 172.16.10.252
 winvm_ip_cidr: 24
 winvm_name: ServerTest03
-winvm_namespace: windows-virtual-machines
+winvm_namespace: win-vm-virt
 winvm_network_name: default/vlan-100
 winvm_ram: 32Gi
 winvm_rootdisk_size: 60Gi

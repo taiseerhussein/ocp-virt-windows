@@ -40,7 +40,7 @@ winvm_network_name: default/vlan-100
 winvm_ram: 32Gi
 winvm_rootdisk_size: 60Gi
 winvm_rootdisk_source_pvc:
-  name: server-2022-template-volume
+  name: win2k22-template
   namespace: windows-virtual-machines
 winvm_rootdisk_storageclass: odf-storagecluster-ceph-rbd-virtualization
 
